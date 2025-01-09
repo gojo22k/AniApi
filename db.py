@@ -74,7 +74,7 @@ def update_data_in_db(new_json_data):
 
     # Step 4: Prepare the payload to overwrite the file
     update_payload = {
-        "message": "Rewriting content of anime_data.txt",
+        "message": "♦️ DONE UPDATING ♦️",
         "sha": sha,  # Use the current sha to update the file
         "content": encoded_data  # Base64 encoded new content
     }
