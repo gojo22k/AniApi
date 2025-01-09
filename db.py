@@ -62,24 +62,32 @@ def update_data_in_db(new_json_data):
         print("Error fetching the existing file:", response.json())
         return False
 
-    # Step 2: Validate the new data is valid JSON
+    # Step 2: Validate and sort the new data
     try:
-        json.loads(new_json_data)  # Ensure new data is valid JSON
+        anime_list = json.loads(new_json_data)  # Ensure new data is valid JSON
+        if not isinstance(anime_list, list):
+            print("Error: Data should be a list of anime entries.")
+            return False
+        # Sort the data by `aid` in ascending order
+        anime_list_sorted = sorted(anime_list, key=lambda x: x.get('aid', 0))
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON data: {e}")
         return False
 
-    # Step 3: Base64 encode the new content
-    encoded_data = base64.b64encode(new_json_data.encode("utf-8")).decode("utf-8")
+    # Step 3: Convert the sorted list back to JSON string
+    sorted_json_data = json.dumps(anime_list_sorted, indent=4)
 
-    # Step 4: Prepare the payload to overwrite the file
+    # Step 4: Base64 encode the sorted content
+    encoded_data = base64.b64encode(sorted_json_data.encode("utf-8")).decode("utf-8")
+
+    # Step 5: Prepare the payload to overwrite the file
     update_payload = {
         "message": "♦️ DONE UPDATING ♦️",
         "sha": sha,  # Use the current sha to update the file
-        "content": encoded_data  # Base64 encoded new content
+        "content": encoded_data  # Base64 encoded sorted content
     }
 
-    # Step 5: Send the PUT request to update the file
+    # Step 6: Send the PUT request to update the file
     response = requests.put(url, headers=headers, json=update_payload)
 
     if response.status_code == 200:
