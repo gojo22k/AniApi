@@ -9,7 +9,7 @@ ADMINS = 1740287480, 5192808332, 7428552084, 5626835282, 1190642269
 OWNER = 'OtakuFlix'
 REPO = 'ADATA'
 PATH = 'anime_data.txt'
-MESSAGE = 'Update anime_data.txt'
+MESSAGE = '♦️ DONE UPDATING ♦️'
 GIT_TOKEN = os.getenv('GIT_TOKEN', '')
 
 # API keys for different platforms
