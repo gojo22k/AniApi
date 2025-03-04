@@ -2,23 +2,26 @@ import requests
 from imdb import IMDb
 from cloud import fetch_all_cloud_folders
 
-# Function to shorten image URL using freeimage.host API
 def shorten_image_url(image_url):
     """
-    Shorten the image URL using freeimage.host.
+    Shorten the image URL using freeimage.host API.
     """
+    api_key = "6d207e02198a847aa98d0a2a901485a5"  # Your API Key
     try:
         response = requests.post('https://freeimage.host/api/1/upload', data={
-            'image': image_url,
+            'key': api_key,
+            'action': 'upload',
+            'source': image_url,
+            'format': 'json'
         })
         response.raise_for_status()
         data = response.json()
-        
-        if data.get('image') and data['image'].get('url'):
-            return data['image']['url']
+
+        if "image" in data and "display_url" in data["image"]:
+            return data["image"]["display_url"]  # Correct URL key
     except requests.RequestException as e:
         print(f"Error shortening image URL: {e}")
-        return image_url  # Return the original URL if shortening fails
+    return image_url  # Return original URL if shortening fails
 
 
 def fetch_kitsu_data(anime_name):
@@ -163,13 +166,12 @@ def fetch_jikan_data(anime_name):
         return None
 
 
-def fetch_complete_data():
+def fetch_complete_data(filtered_data=None):
     """
-    Fetches all folder data, enriches it with details from Jikan, Kitsu, and IMDb, 
-    and returns the complete dataset.
+    Fetches all folder data or uses the provided filtered data.
     """
     enriched_data = []
-    folders = fetch_all_cloud_folders()
+    folders = filtered_data if filtered_data is not None else fetch_all_cloud_folders()
 
     for folder in folders:
         anime_name = folder["name"]
@@ -183,38 +185,27 @@ def fetch_complete_data():
         jikan_data = fetch_jikan_data(anime_name) or {}
         kitsu_data = fetch_kitsu_data(anime_name) or {}
 
-        # Combine banners
+        # Combine banners, posters, and trailers
         banners = ", ".join(filter(None, [kitsu_data.get("banner"), jikan_data.get("jbanner")]))
-
-        # Combine posters
         posters = ", ".join(filter(None, [kitsu_data.get("kposter"), jikan_data.get("jposter"), imdb_data.get("iposter")]))
         trailers = ", ".join(filter(None, [kitsu_data.get("ktrailer"), jikan_data.get("jtrailer")]))
 
-
-        # Combine all sources' data
         enriched_data.append({
             "AID": aid,
             "LET": let,
             "NAME": anime_name,
             "CNAME": cname,
             "CIDs": cids,
-            "kposter": kitsu_data.get("kposter", "N/A"),
-            "jposter": jikan_data.get("jposter", "N/A"),
-            "iposter": imdb_data.get("iposter", "N/A"),
-            "ktrailer": kitsu_data.get("ktrailer", "N/A"),
-            "jtrailer": jikan_data.get("jtrailer", "N/A"),
-            "itrailer": imdb_data.get("itrailer", "N/A"),
-            "trailers": trailers,
             "posters": posters,
             "banners": banners,
-            "listanime": jikan_data.get("listanime", "N/A"),  # Include the list of similar anime
+            "trailers": trailers,
+            "listanime": jikan_data.get("listanime", "N/A"),
             "synopsis": kitsu_data.get("synopsis", "No synopsis available."),
             **jikan_data,
             **kitsu_data,
             **imdb_data,
         })
 
-        # Log the success or failure of the data fetching
         print(f"Successfully fetched data for {anime_name}")
 
     return enriched_data
