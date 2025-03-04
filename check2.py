@@ -2,26 +2,44 @@ import json
 import time
 import requests
 import subprocess
+import logging
+import sys
+from logging.handlers import RotatingFileHandler
 
 # Define the Kitsu API URL for fetching anime data by name
 KITSU_API_URL = "https://kitsu.io/api/edge/anime"
 
+# Set up logging configuration
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_handler = RotatingFileHandler('app.log', maxBytes=2000, backupCount=5)
+log_handler.setFormatter(log_formatter)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(log_handler)
+
+# Function to send logs to Telegram (Assuming you have a function for this)
+def send_log_to_telegram(log_message):
+    # Add logic to send log_message to Telegram
+    pass
+
 def log_message(message_type, message_content):
     """Log messages with different types for better organization."""
-    log_types = {
-        'INFO': lambda msg: print(f"[INFO] {msg}"),
-        'ERROR': lambda msg: print(f"[ERROR] {msg}"),
-        'WARNING': lambda msg: print(f"[WARNING] {msg}"),
-        'UPDATE': lambda msg: print(f"[UPDATE] {msg}"),
-        'DEBUG': lambda msg: print(f"[DEBUG] {msg}"),
-        'SUCCESS': lambda msg: print(f"[SUCCESS] {msg}"),
+    log_functions = {
+        'INFO': lambda msg: logger.info(msg),
+        'ERROR': lambda msg: logger.error(msg),
+        'WARNING': lambda msg: logger.warning(msg),
+        'UPDATE': lambda msg: logger.info(msg),
+        'DEBUG': lambda msg: logger.debug(msg),
+        'SUCCESS': lambda msg: logger.info(msg),
     }
     
     # If the log type is valid, log the message
-    if message_type in log_types:
-        log_types[message_type](message_content)
+    if message_type in log_functions:
+        log_functions[message_type](message_content)
+        send_log_to_telegram(f"{message_type}: {message_content}")
     else:
-        print(f"[UNKNOWN] {message_content}")
+        logger.info(f"[UNKNOWN] {message_content}")
+        send_log_to_telegram(f"UNKNOWN: {message_content}")
 
 def get_anime_status_from_kitsu(anime_name):
     """Fetch the anime status from Kitsu API based on the anime name."""
