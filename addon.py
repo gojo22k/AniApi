@@ -120,7 +120,7 @@ def fetch_list_anime(mal_id):
 
 def fetch_jikan_data(anime_name):
     """
-    Fetch additional anime details using the Jikan v4 API and include related anime, trailers, and banners.
+    Fetch additional anime details using the Jikan v4 API and include related anime, trailers, banners, studios, and producers.
     """
     jikan_url = f"https://api.jikan.moe/v4/anime?q={anime_name}"
     try:
@@ -131,6 +131,10 @@ def fetch_jikan_data(anime_name):
         if data.get("data"):
             anime = data["data"][0]
             mal_id = anime.get("mal_id")
+
+            # Extract studios and producers
+            studios = ", ".join(studio["name"] for studio in anime.get("studios", [])) if anime.get("studios") else "N/A"
+            producers = ", ".join(producer["name"] for producer in anime.get("producers", [])) if anime.get("producers") else "N/A"
 
             # Fetch trailer from Jikan if available
             trailer = anime.get("trailer", {}).get("url")
@@ -160,11 +164,12 @@ def fetch_jikan_data(anime_name):
                 "genre": genres if genres else "N/A",
                 "listanime": listanime,  # Store the list of related series
                 "sanime": similar_anime or "N/A",
+                "studio": studios,  # ✅ Added studio
+                "producers": producers,  # ✅ Added producers
             }
         return None
     except requests.RequestException as e:
         return None
-
 
 def fetch_complete_data(filtered_data=None):
     """
