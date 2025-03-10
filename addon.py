@@ -1,6 +1,8 @@
+import json
 import requests
 from imdb import IMDb
 from cloud import fetch_all_cloud_folders
+from db import fetch_data_from_db
 
 def shorten_image_url(image_url):
     """
@@ -20,7 +22,7 @@ def shorten_image_url(image_url):
         if "image" in data and "display_url" in data["image"]:
             return data["image"]["display_url"]  # Correct URL key
     except requests.RequestException as e:
-        print(f"Error shortening image URL: {e}")
+        pass
     return image_url  # Return original URL if shortening fails
 
 
@@ -165,25 +167,66 @@ def fetch_jikan_data(anime_name):
                 "listanime": listanime,  # Store the list of related series
                 "sanime": similar_anime or "N/A",
                 "studio": studios,  # ✅ Added studio
-                "producers": producers,  # ✅ Added producers
+                "producers": producers or "Aniflix",  # ✅ Added producers
             }
         return None
     except requests.RequestException as e:
         return None
 
+import json
+from db import fetch_data_from_db
+
+import json
+
+# Global variable to store AID
+getAid = None  # Will be initialized from the database
+
+def fetch_last_aid_from_db():
+    """Fetch the last AID from the database once and store it in `getAid`."""
+    global getAid  # Use the global variable
+    
+    if getAid is not None:
+        return getAid  # Use the stored AID if already initialized
+
+    # Fetch data from the database
+    db_data, _ = fetch_data_from_db()
+    try:
+        existing_db_data = json.loads(db_data)  # Parse JSON data
+    except json.JSONDecodeError:
+        getAid = 0  # If database is invalid, start from 0
+        return getAid
+
+    # Extract the highest AID from the database
+    existing_aids = {anime.get('aid', 0) for anime in existing_db_data if isinstance(anime.get('aid', 0), int)}
+    getAid = max(existing_aids, default=0)  # Set global AID
+    return getAid
+
+
 def fetch_complete_data(filtered_data=None):
     """
-    Fetches all folder data or uses the provided filtered data.
+    Fetches all folder data or uses the provided filtered data and assigns unique AIDs.
+    Uses a global variable (`getAid`) to track AID without updating the database repeatedly.
     """
+    global getAid  # Use global AID variable
+
     enriched_data = []
     folders = filtered_data if filtered_data is not None else fetch_all_cloud_folders()
 
+    # Initialize `getAid` from the database only once
+    if getAid is None:
+        getAid = fetch_last_aid_from_db()
+
+    print(f"Starting AID from Database: {getAid}")
+
+    # Iterate over folders and assign a unique AID for each anime
     for folder in folders:
         anime_name = folder["name"]
-        aid = folder["AID"]
         let = folder["LET"]
         cname = folder["CNAME"]
         cids = folder["CIDs"]
+
+        # Increment AID locally
+        getAid += 1  
 
         # Fetch data from all sources
         imdb_data = fetch_imdb_data(anime_name) or {}
@@ -195,8 +238,9 @@ def fetch_complete_data(filtered_data=None):
         posters = ", ".join(filter(None, [kitsu_data.get("kposter"), jikan_data.get("jposter"), imdb_data.get("iposter")]))
         trailers = ", ".join(filter(None, [kitsu_data.get("ktrailer"), jikan_data.get("jtrailer")]))
 
+        # Add new anime with updated AID
         enriched_data.append({
-            "AID": aid,
+            "AID": getAid,  # Now correctly incremented
             "LET": let,
             "NAME": anime_name,
             "CNAME": cname,
@@ -211,7 +255,14 @@ def fetch_complete_data(filtered_data=None):
             **imdb_data,
         })
 
-        print(f"Successfully fetched data for {anime_name}")
+        # Logging
+        print(f"\nNew Anime Added:")
+        print(f" - {anime_name}")
+        print(f"Successfully fetched data for {anime_name} with new AID: {getAid}")
+        print(f"New AID assigned: {getAid}\n")
+
+    # Print final results
+    print("\nFinal AID after processing all anime:", getAid)
 
     return enriched_data
 
