@@ -12,11 +12,6 @@ sys.stdout.reconfigure(line_buffering=True)
 # Set up minimal logging configuration
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-def generate_new_aid(existing_db_data):
-    """Generate the next available AID ensuring uniqueness."""
-    existing_aids = {anime.get('aid', 0) for anime in existing_db_data if isinstance(anime.get('aid', 0), int)}
-    return max(existing_aids, default=0) + 1
-
 def perform_check():
     cloud_data = fetch_all_cloud_folders()
     db_data, _ = fetch_data_from_db()
@@ -65,9 +60,7 @@ def perform_check():
             print(f" - {name}")
             new_anime_data = fetch_complete_data([a for a in cloud_data if a.get('name') == name])
             if new_anime_data:
-                new_aid = generate_new_aid(updated_db_data)
                 for anime in new_anime_data:
-                    anime['aid'] = new_aid
                     updated_db_data.append(anime)
 
     if deleted_anime_names:
