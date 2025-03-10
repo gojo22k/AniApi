@@ -38,13 +38,11 @@ def admin_only():
     return filters.create(wrapper)
 
 # Handler for authorized commands
-@app.on_message(filters.command(["start", "fast_update", "update_all", "check", "aniflix_api"]) & admin_only())
+@app.on_message(filters.command(["fast_update", "update_all", "check", "aniflix_api"]) & admin_only())
 async def authorized_handler(client, message: Message):
     """Authorized commands for admins."""
     command = message.command[0]
-    if command == "start":
-        await message.reply("😊 Welcome to the Anime Bot! Use the available commands to interact.")
-    elif command == "fast_update":
+    if command == "fast_update":
         await message.reply("⚠️ Running fast update...")
         await stream_script_output('check1.py', message)
         await message.reply("✅ Fast update process finished.")
@@ -63,10 +61,25 @@ async def unauthorized_handler(client, message: Message):
     """Notify unauthorized users."""
     await message.reply("⛔ You are not authorized to use this command.")
 
-@app.on_message(filters.command("start"))
+@app.on_message(filters.command("start") & admin_only())
 async def start(client, message: Message):
-    """Send a welcome message on /start"""
-    await message.reply("Welcome to the Anime Bot! Use the available commands to interact.")
+    """Send a welcome message with an image on /start"""
+    start_image_url = "https://iili.io/3fLTdfn.jpg"
+    
+    await message.reply_photo(
+        start_image_url,
+        caption=(
+            "👋 **Welcome to the Anime Bot!**\n\n"
+            "This bot helps you manage anime data efficiently.\n"
+            "Here are some commands you can use:\n"
+            "🔹 `/fast_update` - Quickly update anime records\n"
+            "🔹 `/update_all` - Perform a full database update\n"
+            "🔹 `/check` - Check platform and API statuses\n"
+            "🔹 `/aniflix_api` - Fetch anime list from the database\n\n"
+            "✅ **Admin Access Required for Certain Commands**\n"
+            "Use the bot responsibly and enjoy your anime tracking! 🎉"
+        )
+    )
 
 async def stream_script_output(script_name, message: Message):
     """
