@@ -20,7 +20,7 @@ ANIFLIX_USER_ID = '1740287480'
 
 # URLs for fetching data
 PLATFORMS = {
-    'Filemoon': f'https://filemoon-api.vercel.app/api/filemoon?key={FILEMOON_API_KEY}&fld_id=0',
+    'Filemoon': f'https://api.byse.sx/folder/list?key={FILEMOON_API_KEY}&fld_id=0',
     'RpmShare': f'https://rpmshare.com/api/folder/list?key={RPMSHARE_API_KEY}&fld_id=0',
     'Aniflix': f'https://aniflix.koyeb.app/api/folder_list?user_id={ANIFLIX_USER_ID}&page=1&page_size=200'
 }
