@@ -59,6 +59,7 @@ def fetch_kitsu_data(anime_name):
             youtube_trailer = f"https://www.youtube.com/embed/{attributes.get('youtubeVideoId')}?enablejsapi=1&wmode=opaque&autoplay=1&loop=1" if attributes.get("youtubeVideoId") else None
             
             return {
+                "kitsu_id": anime.get("id", "N/A"),
                 "status": attributes.get("status", "Unknown").capitalize(),
                 "total_episodes": attributes.get("episodeCount", "N/A"),
                 "kposter": kposter,
@@ -173,6 +174,7 @@ def fetch_jikan_data(anime_name):
             similar_anime = fetch_similar_anime(mal_id)
 
             return {
+                "mal_id": mal_id,
                 "type": anime.get("type", "Unknown"),
                 "pg_rating": anime.get("rating", "N/A"),
                 "jposter": jposter,
@@ -218,7 +220,29 @@ def fetch_last_aid_from_db():
     getAid = max(existing_aids, default=0)  # Set global AID
     return getAid
 
-
+def fetch_anilist_id(anime_name):
+    """Fetch AniList ID for a given anime name."""
+    query = '''
+    query ($search: String) {
+        Media(search: $search, type: ANIME) {
+            id
+        }
+    }
+    '''
+    try:
+        response = requests.post(
+            'https://graphql.anilist.co',
+            json={'query': query, 'variables': {'search': anime_name}},
+            timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+        if data.get('data') and data['data'].get('Media'):
+            return data['data']['Media']['id']
+    except Exception:
+        pass
+    return "N/A"
+    
 def fetch_complete_data(filtered_data=None):
     """
     Fetches all folder data or uses the provided filtered data and assigns unique AIDs.
@@ -247,7 +271,8 @@ def fetch_complete_data(filtered_data=None):
         imdb_data = fetch_imdb_data(anime_name) or {}
         jikan_data = fetch_jikan_data(anime_name) or {}
         kitsu_data = fetch_kitsu_data(anime_name) or {}
-
+        anilist_id = fetch_anilist_id(anime_name)
+        
         # Combine banners, posters, and trailers
         banners = ", ".join(filter(None, [kitsu_data.get("banner"), jikan_data.get("jbanner")]))
         posters = ", ".join(filter(None, [kitsu_data.get("kposter"), jikan_data.get("jposter"), imdb_data.get("iposter")]))
@@ -256,6 +281,9 @@ def fetch_complete_data(filtered_data=None):
         # Add new anime with updated AID
         enriched_data.append({
             "AID": getAid,  # Now correctly incremented
+            "mal_id": jikan_data.get("mal_id", "N/A"),
+            "kitsu_id": kitsu_data.get("kitsu_id", "N/A"),
+            "anilist_id": anilist_id,
             "LET": let,
             "NAME": anime_name,
             "CNAME": cname,
