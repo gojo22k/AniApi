@@ -75,7 +75,7 @@ def admin_only():
     return filters.create(wrapper)
 
 # Handler for authorized commands
-@app.on_message(filters.command(["fast_update", "update_all", "check", "aniflix_api", "server", "imdb", "c_stats", "image"]) & admin_only())
+@app.on_message(filters.command(["fast_update", "update_all", "check", "aniflix_api", "server", "imdb", "c_stats", "image", "ids"]) & admin_only())
 async def authorized_handler(client, message: Message):
     """Authorized commands for admins."""
     command = message.command[0]
@@ -100,9 +100,11 @@ async def authorized_handler(client, message: Message):
         await update_stats(client, message)
     elif command == "image":
         await update_images(client, message)
+    elif command == "ids":
+        await update_ids(client, message)
 
 # Fallback for non-admins
-@app.on_message(filters.command(["start", "fast_update", "update_all", "check", "aniflix_api", "server", "imdb", "c_stats", "image"]) & ~admin_only())
+@app.on_message(filters.command(["start", "fast_update", "update_all", "check", "aniflix_api", "server", "imdb", "c_stats", "image", "ids"]) & ~admin_only())
 async def unauthorized_handler(client, message: Message):
     """Notify unauthorized users."""
     await message.reply("⛔ You are not authorized to use this command.")
@@ -270,6 +272,12 @@ async def update_images(client, message: Message):
     await stream_script_output('update_images.py', message)
     await message.reply("[COMPLETED] Image update finished.")
 
+@app.on_message(filters.command("ids"))
+async def update_ids(client, message: Message):
+    """Update MAL ID, Kitsu ID, and AniList ID for all anime"""
+    await message.reply("[RUNNING] Updating anime IDs (MAL, Kitsu, AniList)...")
+    await stream_script_output('update_ids.py', message)
+    await message.reply("[COMPLETED] ID update finished.")
 
 if __name__ == "__main__":
     # Start health check server in a separate thread
