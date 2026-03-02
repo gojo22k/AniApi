@@ -32,6 +32,9 @@ def process_input_data(input_data):
                 "imdb_votes": anime.get("imdb_votes") or anime.get("IMDB_VOTES", "N/A"),
                 "synopsis": anime.get("synopsis") or anime.get("SYNOPSIS", "No synopsis available."),
                 "ranime": anime.get("listanime") or anime.get("ranime", "N/A"),
+                "mal_id": anime.get("mal_id", "N/A"),
+                "kitsu_id": anime.get("kitsu_id", "N/A"),
+                "anilist_id": anime.get("anilist_id", "N/A"),
             }
             for anime in input_data
         ]
